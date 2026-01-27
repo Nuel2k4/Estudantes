@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BNStudy - Seu Espaço de Estudos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body data-show-welcome="{{ 'true' if show_welcome else 'false' }}">
+    <!-- Background animado -->
+    <div class="animated-background">
+        <div class="gradient-sphere sphere-1"></div>
+        <div class="gradient-sphere sphere-2"></div>
+        <div class="gradient-sphere sphere-3"></div>
+    </div>
+
+    <!-- Container principal -->
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar glass">
+            <div class="sidebar-header">
+                <h1 class="logo">
+                    <i class="fas fa-graduation-cap"></i>
+                    BNStudy
+                </h1>
+                <div class="header-actions">
+                    {% if user.is_admin %}
+                    <a href="/admin" class="btn-admin" title="Painel Admin">
+                        <i class="fas fa-shield-alt"></i>
+                    </a>
+                    {% endif %}
+                    <a href="/logout" class="btn-logout" title="Sair">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Cronômetro de Estudo -->
+            <div class="study-timer glass-card">
+                <div class="timer-header">
+                    <i class="fas fa-clock"></i>
+                    <h3>Tempo de Estudo</h3>
+                </div>
+                
+                <div class="timer-display-clean">
+                    <div class="time-unit">
+                        <span class="time-value" id="hours">00</span>
+                        <span class="time-label">horas</span>
+                    </div>
+                    <span class="time-separator">:</span>
+                    <div class="time-unit">
+                        <span class="time-value" id="minutes">00</span>
+                        <span class="time-label">minutos</span>
+                    </div>
+                    <span class="time-separator">:</span>
+                    <div class="time-unit">
+                        <span class="time-value" id="seconds">00</span>
+                        <span class="time-label">segundos</span>
+                    </div>
+                </div>
+
+                <div class="timer-controls">
+                    <button class="btn-timer btn-start" id="startTimer">
+                        <i class="fas fa-play"></i>
+                        <span>Iniciar</span>
+                    </button>
+                    <button class="btn-timer btn-pause" id="stopTimer" disabled>
+                        <i class="fas fa-pause"></i>
+                        <span>Pausar</span>
+                    </button>
+                    <button class="btn-timer btn-reset" id="resetTimer">
+                        <i class="fas fa-redo"></i>
+                    </button>
+                </div>
+                
+                <!-- Estatísticas de Estudo -->
+                <div class="study-stats">
+                    <div class="stats-header" onclick="toggleStats()">
+                        <span><i class="fas fa-chart-bar"></i> Estatísticas</span>
+                        <i class="fas fa-chevron-down" id="statsToggle"></i>
+                    </div>
+                    <div class="stats-content" id="statsContent">
+                        <div class="stat-item">
+                            <div class="stat-label">
+                                <i class="fas fa-calendar-day"></i> Hoje
+                            </div>
+                            <div class="stat-value" id="statToday">0h 0min</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">
+                                <i class="fas fa-calendar-week"></i> Esta Semana
+                            </div>
+                            <div class="stat-value" id="statWeek">0h 0min</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">
+                                <i class="fas fa-calendar-alt"></i> Este Mês
+                            </div>
+                            <div class="stat-value" id="statMonth">0h 0min</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">
+                                <i class="fas fa-calendar"></i> Este Ano
+                            </div>
+                            <div class="stat-value" id="statYear">0h 0min</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista de Pastas -->
+            <div class="folders-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-folder"></i> Minhas Pastas</h3>
+                    <button class="btn-add" id="addFolderBtn">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                <div class="folders-list" id="foldersList">
+                    <!-- Pastas carregadas dinamicamente -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- Área Principal -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="main-header glass">
+                <div class="header-left">
+                    <div class="view-tabs">
+                        <button class="tab-btn active" id="notasTab" onclick="alternarView('notas')">
+                            <i class="fas fa-sticky-note"></i> Minhas Notas
+                        </button>
+                        <button class="tab-btn" id="rotinaTab" onclick="alternarView('rotina')">
+                            <i class="fas fa-calendar-alt"></i> Minha Rotina
+                        </button>
+                    </div>
+                    <h2 id="currentFolderName" style="display: none;">Bem-vindo ao BNStudy</h2>
+                </div>
+                <div class="header-right">
+                    <button class="btn-header" id="addNoteBtn" disabled>
+                        <i class="fas fa-plus"></i> Nova Nota
+                    </button>
+                    <button class="btn-header" id="addTaskBtn" style="display: none;" onclick="abrirFormTarefa()">
+                        <i class="fas fa-plus"></i> Nova Atividade
+                    </button>
+                </div>
+            </header>
+
+            <!-- View de Notas -->
+            <div class="view-container" id="notasView">
+                <div class="notes-grid" id="notesGrid">
+                    <div class="welcome-message">
+                        <i class="fas fa-lightbulb"></i>
+                        <h2>Organize seus estudos!</h2>
+                        <p>Crie uma pasta para começar a fazer suas anotações</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View de Rotina -->
+            <div class="view-container" id="rotinaView" style="display: none;">
+                <div class="routine-container">
+                    <!-- Cabeçalho do Cronograma -->
+                    <div class="schedule-header">
+                        <div class="schedule-info">
+                            <h2><i class="fas fa-list-check"></i> Meu Cronograma Diário</h2>
+                            <p>Organize suas atividades e marque conforme completa</p>
+                        </div>
+                        <button class="btn-reset-schedule" onclick="resetarCronograma()" title="Resetar marcações do dia">
+                            <i class="fas fa-redo"></i> Resetar Dia
+                        </button>
+                    </div>
+
+                    <!-- Seletor de Dia -->
+                    <div class="day-selector">
+                        <button class="day-btn active" data-day="segunda" onclick="selecionarDia('segunda')">Seg</button>
+                        <button class="day-btn" data-day="terça" onclick="selecionarDia('terça')">Ter</button>
+                        <button class="day-btn" data-day="quarta" onclick="selecionarDia('quarta')">Qua</button>
+                        <button class="day-btn" data-day="quinta" onclick="selecionarDia('quinta')">Qui</button>
+                        <button class="day-btn" data-day="sexta" onclick="selecionarDia('sexta')">Sex</button>
+                        <button class="day-btn" data-day="sábado" onclick="selecionarDia('sábado')">Sáb</button>
+                        <button class="day-btn" data-day="domingo" onclick="selecionarDia('domingo')">Dom</button>
+                    </div>
+
+                    <!-- Lista de Tarefas do Cronograma -->
+                    <div class="schedule-list" id="scheduleList">
+                        <!-- Carregado dinamicamente -->
+                    </div>
+
+                    <!-- Mensagem quando vazio -->
+                    <div class="empty-schedule" id="emptySchedule" style="display: none;">
+                        <i class="fas fa-calendar-plus"></i>
+                        <h3>Cronograma vazio</h3>
+                        <p>Clique em "Nova Atividade" para adicionar tarefas ou</p>
+                        <button class="btn-init-schedule" onclick="inicializarCronograma()">
+                            <i class="fas fa-magic"></i> Criar Cronograma Padrão
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Painel Lateral Direito -->
+        <aside class="right-panel">
+            <!-- Chat AI -->
+            <div class="ai-chat glass">
+                <div class="ai-header">
+                    <i class="fas fa-robot"></i>
+                    <h3>Assistente IA (Gemini)</h3>
+                </div>
+                <div class="ai-messages" id="aiMessages">
+                    <div class="ai-message assistant">
+                        <p>Olá! Sou seu assistente de estudos powered by Google Gemini. Como posso ajudar?</p>
+                    </div>
+                </div>
+                <div class="ai-input-container">
+                    <input type="text" id="aiInput" placeholder="Pergunte algo..." />
+                    <button class="btn-send" id="sendAiMessage">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Modal para criar pasta -->
+    <div class="modal-folder" id="folderModal">
+        <div class="modal-folder-content glass">
+            <div class="folder-modal-icon">
+                <i class="fas fa-folder-plus"></i>
+            </div>
+            <h2 class="folder-modal-title">Nova Pasta</h2>
+            <p class="folder-modal-subtitle">Organize seus estudos criando uma nova pasta</p>
+            <div class="folder-input-group">
+                <i class="fas fa-folder"></i>
+                <input type="text" class="folder-name-input" id="folderNameInput" placeholder="Nome da pasta" maxlength="50" />
+            </div>
+            <div class="folder-modal-actions">
+                <button class="btn-folder-cancel" id="cancelFolderBtn">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button class="btn-folder-save" id="saveFolderBtn">
+                    <i class="fas fa-check"></i> Criar Pasta
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para excluir pasta -->
+    <div class="modal-delete" id="deleteModal">
+        <div class="modal-delete-content glass">
+            <div class="delete-modal-icon">
+                <i class="fas fa-trash-alt"></i>
+            </div>
+            <h2 class="delete-modal-title">Excluir Pasta</h2>
+            <p class="delete-modal-subtitle">Tem certeza que deseja excluir esta pasta?</p>
+            <p class="delete-modal-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                Todas as notas dentro desta pasta serão perdidas permanentemente!
+            </p>
+            <div class="folder-modal-actions">
+                <button class="btn-delete-cancel" onclick="fecharModalExcluir()">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button class="btn-delete-confirm" onclick="confirmarExclusao()">
+                    <i class="fas fa-trash"></i> Sim, Excluir
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        window.pastaParaExcluir = null;
+        
+        window.abrirModalExcluir = function(folderId) {
+            window.pastaParaExcluir = folderId;
+            const modal = document.getElementById('deleteModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                modal.style.opacity = '1';
+            }
+        }
+        
+        window.fecharModalExcluir = function() {
+            const modal = document.getElementById('deleteModal');
+            if (modal) {
+                modal.style.opacity = '0';
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                }, 300);
+            }
+            window.pastaParaExcluir = null;
+        }
+        
+        window.confirmarExclusao = async function() {
+            if (!window.pastaParaExcluir) return;
+            
+            try {
+                const response = await fetch(`/api/folders/${window.pastaParaExcluir}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    if (typeof currentFolderId !== 'undefined' && currentFolderId === window.pastaParaExcluir) {
+                        currentFolderId = null;
+                        document.getElementById('currentFolderName').textContent = 'Bem-vindo ao BNStudy';
+                        document.getElementById('addNoteBtn').disabled = true;
+                        document.getElementById('notesGrid').innerHTML = '<div class="welcome-message"><i class="fas fa-lightbulb"></i><h2>Organize seus estudos!</h2><p>Crie uma pasta para começar a fazer suas anotações</p></div>';
+                        
+                        const rightPanel = document.querySelector('.right-panel');
+                        if (rightPanel) {
+                            rightPanel.classList.remove('show');
+                        }
+                    }
+                    
+                    if (typeof loadFolders === 'function') {
+                        await loadFolders();
+                    }
+                    window.fecharModalExcluir();
+                    if (typeof showNotification === 'function') {
+                        showNotification('Pasta excluída com sucesso!', 'success');
+                    }
+                }
+            } catch (error) {
+                console.error('Erro ao excluir pasta:', error);
+                if (typeof showNotification === 'function') {
+                    showNotification('Erro ao excluir pasta', 'error');
+                }
+            }
+        }
+    </script>
+
+    <!-- Modal para excluir nota -->
+    <div class="modal-delete" id="deleteNoteModal">
+        <div class="modal-delete-content glass">
+            <div class="delete-modal-icon">
+                <i class="fas fa-file-alt"></i>
+            </div>
+            <h2 class="delete-modal-title">Excluir Nota</h2>
+            <p class="delete-modal-subtitle">Tem certeza que deseja excluir esta nota?</p>
+            <p class="delete-modal-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                Esta ação não pode ser desfeita!
+            </p>
+            <div class="folder-modal-actions">
+                <button class="btn-delete-cancel" onclick="fecharModalExcluirNota()">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button class="btn-delete-confirm" onclick="confirmarExclusaoNota()">
+                    <i class="fas fa-trash"></i> Sim, Excluir
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        window.notaParaExcluir = null;
+        
+        window.abrirModalExcluirNota = function(noteId, event) {
+            if (event) {
+                event.stopPropagation();
+            }
+            window.notaParaExcluir = noteId;
+            const modal = document.getElementById('deleteNoteModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                modal.style.opacity = '1';
+            }
+        }
+        
+        window.fecharModalExcluirNota = function() {
+            const modal = document.getElementById('deleteNoteModal');
+            if (modal) {
+                modal.style.opacity = '0';
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                }, 300);
+            }
+            window.notaParaExcluir = null;
+        }
+        
+        window.confirmarExclusaoNota = async function() {
+            if (!window.notaParaExcluir) return;
+            
+            try {
+                const response = await fetch(`/api/notes/${window.notaParaExcluir}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    if (typeof currentFolderId !== 'undefined' && typeof loadNotes === 'function') {
+                        await loadNotes(currentFolderId);
+                    }
+                    window.fecharModalExcluirNota();
+                    if (typeof showNotification === 'function') {
+                        showNotification('Nota excluída com sucesso!', 'success');
+                    }
+                }
+            } catch (error) {
+                console.error('Erro ao excluir nota:', error);
+                if (typeof showNotification === 'function') {
+                    showNotification('Erro ao excluir nota', 'error');
+                }
+            }
+        }
+    </script>
+
+    <!-- Modal para editar nota -->
+    <div class="modal" id="noteModal">
+        <div class="modal-content glass">
+            <div class="modal-header">
+                <h2 id="modalTitle">Nova Nota</h2>
+                <button class="modal-close" id="closeModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="text" class="note-title-input" id="noteTitleInput" placeholder="Título da nota" />
+                <textarea class="note-content-input" id="noteContentInput" placeholder="Escreva suas anotações aqui..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal btn-cancel" id="cancelNote">Cancelar</button>
+                <button class="btn-modal btn-save" id="saveNote">Fechar e Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Animação de Boas-Vindas -->
+    {% if show_welcome %}
+    <div class="welcome-overlay" id="welcomeOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); display: flex; align-items: center; justify-content: center; z-index: 10000; opacity: 1;">
+        <button class="close-welcome-btn" id="closeWelcomeBtn" title="Pular animação" style="position: absolute; top: 2rem; right: 2rem; width: 50px; height: 50px; background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(255, 255, 255, 0.2); border-radius: 50%; color: white; font-size: 1.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10001;">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="book-animation">
+            <div class="book">
+                <div class="book-cover book-left">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <div class="book-cover book-right">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+            </div>
+            <div class="welcome-text">
+                <h2>Bons Estudos!</h2>
+                <p>Bem-vindo(a) ao BNStudy</p>
+            </div>
+        </div>
+    </div>
+    <script>
+        (function() {
+            const overlay = document.getElementById('welcomeOverlay');
+            const closeBtn = document.getElementById('closeWelcomeBtn');
+            
+            if (!overlay) return;
+            
+            let closed = false;
+            
+            function fechar() {
+                if (closed) return;
+                closed = true;
+                overlay.style.transition = 'opacity 0.5s ease';
+                overlay.style.opacity = '0';
+                setTimeout(function() {
+                    if (overlay.parentNode) {
+                        overlay.parentNode.removeChild(overlay);
+                    }
+                }, 500);
+            }
+            
+            if (closeBtn) {
+                closeBtn.onclick = fechar;
+            }
+            
+            setTimeout(fechar, 2000);
+        })();
+    </script>
+    {% endif %}
+
+    <!-- Modal Formulário de Tarefa -->
+    <div class="modal-task-form" id="taskFormModal" style="display: none;">
+        <div class="modal-task-form-content glass">
+            <div class="modal-task-form-header">
+                <h3 id="taskFormTitle"><i class="fas fa-plus-circle"></i> Nova Atividade</h3>
+                <button class="btn-close-task-form" onclick="fecharFormTarefa()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-task-form-body">
+                <input type="hidden" id="taskIdInput">
+                
+                <div class="form-group">
+                    <label><i class="fas fa-tag"></i> Título</label>
+                    <input type="text" id="taskTitleInput" placeholder="Ex: Estudar Python" maxlength="200">
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-th-large"></i> Categoria</label>
+                    <select id="taskCategoryInput">
+                        <option value="estudo">📚 Estudo</option>
+                        <option value="trabalho">💼 Trabalho</option>
+                        <option value="academia">💪 Academia</option>
+                        <option value="lazer">🎮 Lazer</option>
+                        <option value="alimentação">🍽️ Alimentação</option>
+                        <option value="descanso">😴 Descanso</option>
+                        <option value="outro">📌 Outro</option>
+                    </select>
+                </div>
+
+                <div class="form-group-row">
+                    <div class="form-group">
+                        <label><i class="fas fa-clock"></i> Horário Início</label>
+                        <input type="time" id="taskStartTimeInput">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-clock"></i> Horário Fim</label>
+                        <input type="time" id="taskEndTimeInput">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-calendar-week"></i> Dias da Semana</label>
+                    <div class="days-checkbox">
+                        <label><input type="checkbox" value="segunda"> Seg</label>
+                        <label><input type="checkbox" value="terça"> Ter</label>
+                        <label><input type="checkbox" value="quarta"> Qua</label>
+                        <label><input type="checkbox" value="quinta"> Qui</label>
+                        <label><input type="checkbox" value="sexta"> Sex</label>
+                        <label><input type="checkbox" value="sábado"> Sáb</label>
+                        <label><input type="checkbox" value="domingo"> Dom</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-palette"></i> Cor</label>
+                    <div class="color-picker">
+                        <input type="color" id="taskColorInput" value="#6366f1">
+                    </div>
+                </div>
+
+                <div class="modal-task-form-footer">
+                    <button class="btn-cancel" onclick="fecharFormTarefa()">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button class="btn-save-task" onclick="salvarTarefa()">
+                        <i class="fas fa-save"></i> Salvar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Onboarding -->
+    <div class="onboarding-modal" id="onboardingModal">
+        <div class="onboarding-content">
+            <div class="onboarding-header">
+                <h2>🎓 Bem-vindo ao BNStudy!</h2>
+                <p>Vamos te mostrar como aproveitar ao máximo sua plataforma de estudos</p>
+            </div>
+            
+            <div class="onboarding-steps">
+                <div class="onboarding-step">
+                    <div class="step-icon folders">
+                        <i class="fas fa-folder"></i>
+                    </div>
+                    <div class="step-content">
+                        <h3>Organize suas Pastas</h3>
+                        <p>Crie pastas para separar suas matérias e organize suas anotações de forma intuitiva.</p>
+                    </div>
+                </div>
+                
+                <div class="onboarding-step">
+                    <div class="step-icon notes">
+                        <i class="fas fa-sticky-note"></i>
+                    </div>
+                    <div class="step-content">
+                        <h3>Faça Anotações</h3>
+                        <p>Adicione notas com títulos e conteúdo rico. Suas anotações são salvas automaticamente!</p>
+                    </div>
+                </div>
+                
+                <div class="onboarding-step">
+                    <div class="step-icon timer">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="step-content">
+                        <h3>Controle seu Tempo</h3>
+                        <p>Use o cronômetro para medir seu tempo de estudo e acompanhe estatísticas diárias, semanais e mensais.</p>
+                    </div>
+                </div>
+                
+                <div class="onboarding-step">
+                    <div class="step-icon tools">
+                        <i class="fas fa-tools"></i>
+                    </div>
+                    <div class="step-content">
+                        <h3>Ferramentas Extras</h3>
+                        <p>Acesse IA para tirar dúvidas e organize sua rotina diária.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="onboarding-footer">
+                <button class="skip-btn" onclick="closeOnboarding(false)">
+                    <i class="fas fa-times"></i> Pular
+                </button>
+                <button class="start-btn" onclick="closeOnboarding(true)">
+                    <i class="fas fa-rocket"></i> Começar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

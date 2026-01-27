@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BNStudy - Painel Administrativo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Background animado -->
+    <div class="animated-background">
+        <div class="gradient-sphere sphere-1"></div>
+        <div class="gradient-sphere sphere-2"></div>
+        <div class="gradient-sphere sphere-3"></div>
+    </div>
+
+    <!-- Container principal -->
+    <div class="admin-container">
+        <!-- Header -->
+        <header class="admin-header glass">
+            <div class="header-left">
+                <h1>
+                    <i class="fas fa-shield-alt"></i>
+                    Painel Administrativo
+                </h1>
+                <p>Gerencie todos os usuários do BNStudy</p>
+            </div>
+            <div class="header-right">
+                <a href="/app" class="btn-back">
+                    <i class="fas fa-arrow-left"></i>
+                    Voltar ao App
+                </a>
+                <a href="/logout" class="btn-logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Sair
+                </a>
+            </div>
+        </header>
+
+        <!-- Stats -->
+        <div class="stats-container">
+            <div class="stat-card glass">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="totalUsers">0</h3>
+                    <p>Total de Usuários</p>
+                </div>
+            </div>
+            
+            <div class="stat-card glass">
+                <div class="stat-icon admin-icon">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="totalAdmins">0</h3>
+                    <p>Administradores</p>
+                </div>
+            </div>
+            
+            <div class="stat-card glass">
+                <div class="stat-icon user-icon">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="totalRegularUsers">0</h3>
+                    <p>Usuários Regulares</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabela de usuários -->
+        <div class="users-table-container glass">
+            <div class="table-header">
+                <h2>
+                    <i class="fas fa-list"></i>
+                    Lista de Usuários
+                </h2>
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Buscar usuário...">
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nome</th>
+                            <th>Email</th>
+                            <th>Tipo</th>
+                            <th>Pastas</th>
+                            <th>Cadastro</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <tr>
+                            <td colspan="7" class="loading">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                Carregando usuários...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Modal de confirmação -->
+        <div class="modal" id="confirmModal">
+            <div class="modal-content glass">
+                <div class="modal-header">
+                    <h2 id="modalTitle">Confirmar ação</h2>
+                    <button class="modal-close" id="closeModal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p id="modalMessage">Tem certeza?</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-cancel" id="cancelBtn">Cancelar</button>
+                    <button class="btn-confirm" id="confirmBtn">Confirmar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notificação -->
+        <div class="notification" id="notification"></div>
+    </div>
+
+    <div id="userData" data-user-id="{{ user.id }}" style="display: none;"></div>
+    
+    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+</body>
+</html>
